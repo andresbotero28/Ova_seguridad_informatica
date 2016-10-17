@@ -1058,28 +1058,28 @@ function Finish(){
 var CurrQNum = 0;
 var CorrectIndicator = ':-)';
 var IncorrectIndicator = 'X';
-var YourScoreIs = 'Your score is ';
+var YourScoreIs = 'TU puntuacion es ';
 
 //New for 6.2.2.0
-var CompletedSoFar = 'Questions completed so far: ';
-var ExerciseCompleted = 'You have completed the exercise.';
+var CompletedSoFar = 'Preguntan contestadas hasta el momento ';
+var ExerciseCompleted = 'Ejercicio completado';
 var ShowCompletedSoFar = true;
 
 var ContinuousScoring = true;
-var CorrectFirstTime = 'Questions answered correctly first time: ';
+var CorrectFirstTime = 'Pregunta correcta';
 var ShowCorrectFirstTime = true;
 var ShuffleQs = false;
 var ShuffleAs = false;
-var DefaultRight = 'Correct!';
-var DefaultWrong = 'Sorry! Try again.';
+var DefaultRight = 'Correcto';
+var DefaultWrong = 'Intente de nuevo ';
 var QsToShow = 2;
 var Score = 0;
 var Finished = false;
 var Qs = null;
 var QArray = new Array();
 var ShowingAllQuestions = false;
-var ShowAllQuestionsCaption = 'Show all questions';
-var ShowOneByOneCaption = 'Show questions one by one';
+var ShowAllQuestionsCaption = 'Mostrar todas las preguntas';
+var ShowOneByOneCaption = 'Mostrar preguntas una a una ';
 var State = new Array();
 var Feedback = '';
 var TimeOver = false;
@@ -1659,7 +1659,7 @@ function CheckFinished(){
 </div>
 
 <div id="InstructionsDiv" class="StdDiv">
-	<div id="Instructions"></div>
+	<div id="Instructions">Responder de acuerdo a la informaci&#x00F3;n suministrada en las Lecturas</div>
 </div>
 
 
@@ -1670,7 +1670,7 @@ function CheckFinished(){
 <div id="QNav" class="QuestionNavigation">
 
 <p style="text-align: right;">
-<button id="ShowMethodButton" class="FuncButton" onfocus="FuncBtnOver(this)" onblur="FuncBtnOut(this)" onmouseover="FuncBtnOver(this)" onmouseout="FuncBtnOut(this)" onmousedown="FuncBtnDown(this)" onmouseup="FuncBtnOver(this)" onclick="ShowHideQuestions(); return false;">Show all questions</button>
+<button id="ShowMethodButton" class="FuncButton" onfocus="FuncBtnOver(this)" onblur="FuncBtnOut(this)" onmouseover="FuncBtnOver(this)" onmouseout="FuncBtnOut(this)" onmousedown="FuncBtnDown(this)" onmouseup="FuncBtnOver(this)" onclick="ShowHideQuestions(); return false;">Mostrar todas las preguntas</button>
 </p>
 
 <div id="OneByOneReadout">
@@ -1685,7 +1685,7 @@ function CheckFinished(){
 </div>
  
 <ol class="QuizQuestions" id="Questions">
-<li class="QuizQuestion" id="Q_0" style="display: none;"><div class="QuestionText">que es Seguridad informatica </div><ol class="MCAnswers"><li id="Q_0_0"><button class="FuncButton" onfocus="FuncBtnOver(this)" onblur="FuncBtnOut(this)" onmouseover="FuncBtnOver(this)" onmouseout="FuncBtnOut(this)"  onmousedown="FuncBtnDown(this)" onmouseup="FuncBtnOut(this)" id="Q_0_0_Btn" onclick="CheckMCAnswer(0,0,this)">&nbsp;&nbsp;?&nbsp;&nbsp;</button>&nbsp;&nbsp;Compartir todo en Redes</li><li id="Q_0_1"><button class="FuncButton" onfocus="FuncBtnOver(this)" onblur="FuncBtnOut(this)" onmouseover="FuncBtnOver(this)" onmouseout="FuncBtnOut(this)"  onmousedown="FuncBtnDown(this)" onmouseup="FuncBtnOut(this)" id="Q_0_1_Btn" onclick="CheckMCAnswer(0,1,this)">&nbsp;&nbsp;?&nbsp;&nbsp;</button>&nbsp;&nbsp;Tener la informacion protegida</li><li id="Q_0_2"><button class="FuncButton" onfocus="FuncBtnOver(this)" onblur="FuncBtnOut(this)" onmouseover="FuncBtnOver(this)" onmouseout="FuncBtnOut(this)"  onmousedown="FuncBtnDown(this)" onmouseup="FuncBtnOut(this)" id="Q_0_2_Btn" onclick="CheckMCAnswer(0,2,this)">&nbsp;&nbsp;?&nbsp;&nbsp;</button>&nbsp;&nbsp;Compartir todo</li></ol></li>
+<li class="QuizQuestion" id="Q_0" style="display: none;"><div class="QuestionText">Que es Seguridad informatica </div><ol class="MCAnswers"><li id="Q_0_0"><button class="FuncButton" onfocus="FuncBtnOver(this)" onblur="FuncBtnOut(this)" onmouseover="FuncBtnOver(this)" onmouseout="FuncBtnOut(this)"  onmousedown="FuncBtnDown(this)" onmouseup="FuncBtnOut(this)" id="Q_0_0_Btn" onclick="CheckMCAnswer(0,0,this)">&nbsp;&nbsp;?&nbsp;&nbsp;</button>&nbsp;&nbsp;Compartir todo en Redes</li><li id="Q_0_1"><button class="FuncButton" onfocus="FuncBtnOver(this)" onblur="FuncBtnOut(this)" onmouseover="FuncBtnOver(this)" onmouseout="FuncBtnOut(this)"  onmousedown="FuncBtnDown(this)" onmouseup="FuncBtnOut(this)" id="Q_0_1_Btn" onclick="CheckMCAnswer(0,1,this)">&nbsp;&nbsp;?&nbsp;&nbsp;</button>&nbsp;&nbsp;Tener la informacion protegida</li><li id="Q_0_2"><button class="FuncButton" onfocus="FuncBtnOver(this)" onblur="FuncBtnOut(this)" onmouseover="FuncBtnOver(this)" onmouseout="FuncBtnOut(this)"  onmousedown="FuncBtnDown(this)" onmouseup="FuncBtnOut(this)" id="Q_0_2_Btn" onclick="CheckMCAnswer(0,2,this)">&nbsp;&nbsp;?&nbsp;&nbsp;</button>&nbsp;&nbsp;Compartir todo</li></ol></li>
 <li class="QuizQuestion" id="Q_1" style="display: none;"><div class="QuestionText">Algunos Normas de seguridad </div><ol class="MCAnswers"><li id="Q_1_0"><button class="FuncButton" onfocus="FuncBtnOver(this)" onblur="FuncBtnOut(this)" onmouseover="FuncBtnOver(this)" onmouseout="FuncBtnOut(this)"  onmousedown="FuncBtnDown(this)" onmouseup="FuncBtnOut(this)" id="Q_1_0_Btn" onclick="CheckMCAnswer(1,0,this)">&nbsp;&nbsp;?&nbsp;&nbsp;</button>&nbsp;&nbsp;Iso 1400</li><li id="Q_1_1"><button class="FuncButton" onfocus="FuncBtnOver(this)" onblur="FuncBtnOut(this)" onmouseover="FuncBtnOver(this)" onmouseout="FuncBtnOut(this)"  onmousedown="FuncBtnDown(this)" onmouseup="FuncBtnOut(this)" id="Q_1_1_Btn" onclick="CheckMCAnswer(1,1,this)">&nbsp;&nbsp;?&nbsp;&nbsp;</button>&nbsp;&nbsp;APA</li><li id="Q_1_2"><button class="FuncButton" onfocus="FuncBtnOver(this)" onblur="FuncBtnOut(this)" onmouseover="FuncBtnOver(this)" onmouseout="FuncBtnOut(this)"  onmousedown="FuncBtnDown(this)" onmouseup="FuncBtnOut(this)" id="Q_1_2_Btn" onclick="CheckMCAnswer(1,2,this)">&nbsp;&nbsp;?&nbsp;&nbsp;</button>&nbsp;&nbsp;Icontex</li></ol></li></ol>
 
 

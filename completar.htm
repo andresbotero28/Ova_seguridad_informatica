@@ -5,13 +5,13 @@
 
 <link rel="schema.DC" href="http://purl.org/dc/elements/1.1/" />
 <meta name="DC:Creator" content="Andres Botero" />
-<meta name="DC:Title" content="Palabras claves" />
+<meta name="DC:Title" content="Ingenier&#x00ED;a Social" />
 
 
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" /> 
 
 <title>
-Palabras claves
+Ingenier&#x00ED;a Social
 </title>
 
 <!-- Made with executable version 6.3 Release 0 Build 5 -->
@@ -196,31 +196,6 @@ div.Feedback {
 	font-size: 100%;
 }
 
-
-
-div.LeftContainer{
-	border-style: none;
-	padding: 2px 0px 2px 0px;
-	float: left;
-	width: 49.8%;
-	margin-bottom: 0px;
-}
-
-div.RightContainer{
-	border-style: none;
-	padding: 2px 0px 2px 0px;
-	float: right;
-	width: 49.8%;
-	margin-bottom: 0px;
-}
-
-.ReadingText{
-	text-align: left;
-}
-
-#ReadingDiv h3.ExerciseSubtitle{
-	color: #000000;
-}
 
 
 
@@ -1077,351 +1052,248 @@ function Finish(){
 
 
 
-//JCROSS CORE JAVASCRIPT CODE
 
-var InGap = false;
-var CurrentBox = null;
-var Feedback = '';
-var AcrossCaption = '';
-var DownCaption = '';
-var Correct = 'Correcto';
-var Incorrect = 'Algunas Respuestas no son Correctas'; 
-var GiveHint = 'se A&#x00F1;adio una letra incorrecta';
-var YourScoreIs = 'Tu puntuacion es:';
-var BuiltGrid = '';
-var BuiltExercise = '';
+//JMATCH CORE JAVASCRIPT CODE
+
+var CorrectIndicator = ':-)';
+var IncorrectIndicator = 'X';
+var YourScoreIs = 'TU puntuacion es ';
+var CorrectResponse = 'Intento Correcto ';
+var IncorrectResponse = 'Lo sentimos, comenzar de nuevo ';
+var TotalUnfixedLeftItems = 0;
+var TotCorrectChoices = 0;
 var Penalties = 0;
-var Score = 0;
-var InTextBox = false;
-var Locked = false;
-var TimeOver = false;
-var CaseSensitive = false; 
-
-var InputStuff = '<form method="post" action="" onsubmit="return false;"><span class="ClueNum">[strClueNum]: </span>';
-InputStuff += '[strClue] <input onfocus="CurrentBox=this;InTextBox=true;" onblur="InTextBox=false;" id="[strBoxId]" type="edit" size="[strEditSize]" maxlength="[strMaxLength]"></input>';
-InputStuff += '<button class="FuncButton" onfocus="FuncBtnOver(this)" onblur="FuncBtnOut(this)" onmouseover="FuncBtnOver(this)" onmouseout="FuncBtnOut(this)" onmousedown="FuncBtnDown(this)" onmouseup="FuncBtnOut(this)" onclick="EnterGuess([strParams])">Introducir</button>';
-InputStuff += '<button class="FuncButton" onfocus="FuncBtnOver(this)" onblur="FuncBtnOut(this)" onmouseover="FuncBtnOver(this)" onmouseout="FuncBtnOut(this)" onmousedown="FuncBtnDown(this)" onmouseup="FuncBtnOut(this)" onclick="ShowHint([strParams])">Pista</button>';
-InputStuff += '</form>';
-
-var CurrBoxElement = null;
 var Finished = false;
+var TimeOver = false;
+
+var Score = 0;
+var Locked = false;
+var ShuffleQs = false;
+var QsToShow = 5;
+
 
 function StartUp(){
 	RemoveBottomNavBarForIE();
-//Show a keypad if there is one	(added bugfix for 6.0.4.12)
-	if (document.getElementById('CharacterKeypad') != null){
-		document.getElementById('CharacterKeypad').style.display = 'block';
-	}
+
 
 	
-	AcrossCaption = document.getElementById('CluesAcrossLabel').innerHTML;
-	DownCaption = document.getElementById('CluesDownLabel').innerHTML;
 
 
 
 
+	SetUpItems(ShuffleQs,QsToShow);
+
+	TotalUnfixedLeftItems = document.getElementById('MatchDiv').getElementsByTagName('select').length;
+
+//Create arrays
+	CreateStatusArrays();
 
 
 }
 
-function GetAnswerLength(Across,x,y){
-	Result = 0;
-	if (Across == false){
-		while ((x<L.length)&&(L[x][y].length > 0)){
-			Result += L[x][y].length;
-			x++;
-		} 
-		return Result;
+Status = new Array();
+
+
+function CreateStatusArrays(){
+	var Selects = document.getElementById('Questions').getElementsByTagName('select');
+	for (var x=0; x<Selects.length; x++){
+		Status[x] = new Array();
+		Status[x][0] = 0; // Item not matched correctly yet
+		Status[x][1] = 0; //Tries at this item so far
+		Status[x][2] = Selects[x].id; //Store a ref to the original drop-down
+		Status[x][3] = new Array(); //Sequence of guesses for this item
+	}
+}
+
+function GetKeyFromSelectContainer(Container){
+	var Result = -1;
+	if (Container.getElementsByTagName('select').length > 0){
+		var Select = Container.getElementsByTagName('select')[0];
+		if (Select != null){
+			Result = parseInt(Select.id.substring(1, Select.id.length));
+		}
+	}
+	return Result;
+}
+
+function GetKeyFromSelect(Select){
+	var Result = -1;
+	if (Select != null){
+		Result = parseInt(Select.id.substring(1, Select.id.length));
+	}
+	return Result;
+}
+
+var OriginalKeys = new Array();
+var ReducedKeys = new Array();
+
+function GetUniqueKeys(Container, TargetArray){
+	TargetArray.length = 0;
+	var x = -1;
+	var SList = Container.getElementsByTagName('select');
+	if (SList.length > 0){
+		for (var i=0; i<SList.length; i++){
+			x = GetKeyFromSelect(SList[i]);
+			if (TargetArray.indexOf(x) < 0){
+				TargetArray.push(x);
+			}
+		}
+	}
+}
+
+function SetUpItems(ShuffleQs, ReduceTo){
+	var QList = new Array();
+	var i, j, k, Selects, Options;
+
+//Remove all the table rows and put them in an array for processing
+	var Qs = document.getElementById('Questions');
+	
+//First, get a list of keys
+	GetUniqueKeys(Qs, OriginalKeys);
+
+//Remove the table rows to an array
+	while (Qs.getElementsByTagName('tr').length > 0){
+		QList.push(Qs.removeChild(Qs.getElementsByTagName('tr')[0]));
+	}
+
+	var Reducing = (QList.length > ReduceTo);
+	
+//If required, select random rows to delete
+	if (Reducing == true){
+		var DumpItem = 0;
+		while (ReduceTo < QList.length){
+	
+//Get a number to delete from the array
+			DumpItem = Math.floor(QList.length*Math.random());
+			for (i=DumpItem; i<(QList.length-1); i++){
+				QList[i] = QList[i+1];
+			}
+			QList.length = QList.length-1;
+		}
+	}
+//Shuffle the rows if necessary
+	if (ShuffleQs == true){
+		QList = Shuffle(QList);
+	}
+
+	TotalUnfixedLeftItems = QList.length;
+	
+//Write the rows back to the table body
+	for (i=0; i<QList.length; i++){
+		Qs.appendChild(QList[i]);
+	}
+	
+//Now we need to remove any drop-down options that no longer have associated select items
+	if (Reducing == true){
+		GetUniqueKeys(Qs, ReducedKeys);
+		
+		Selects = Qs.getElementsByTagName('select');
+		for (i=0; i<Selects.length; i++){
+			Options = Selects[i].getElementsByTagName('option');
+			for (j=Options.length-1; j>=0; j--){
+				if (OptionRequired(Options[j].value) == false){
+					Selects[i].removeChild(Options[j]);
+				}
+			}
+		}
+	}
+}
+
+function OptionRequired(Key){
+	if (ReducedKeys.indexOf(Key) > -1){
+		return true;
 	}
 	else{
-		while ((y<L[x].length)&&(L[x][y].length > 0)){
-			Result += L[x][y].length;
-			y++;
-		} 	
-		return Result;
-	}
-}
-
-function GetEditSize(Across,x,y){
-	var Len = GetAnswerLength(Across,x,y);
-	if (IsCJK(L[x][y].charCodeAt(0))){
-		Len *= 2;
-	}
-	return Len;
-}
-
-function ShowClue(ClueNum,x,y){
-	var Result = '';
-	var Temp;
-	var strParams;
-	var Clue = document.getElementById('Clue_A_' + ClueNum);
-	if (Clue != null){
-		Temp = InputStuff.replace(/\[ClueNum\]/g, ClueNum);
-		Temp = Temp.replace(/\[strClueNum\]/g, AcrossCaption + ' ' + ClueNum);
-		strParams = 'true,' + ClueNum + ',' + x + ',' + y + ',\'[strBoxId]\'';
-		Temp = Temp.replace(/\[strParams\]/g, strParams);
-		Temp = Temp.replace(/\[strBoxId\]/g, 'GA_' + ClueNum + '_' + x + '_' + y);
-		Temp = Temp.replace(/\[strEditSize\]/g, GetEditSize(true,x,y));
-		Temp = Temp.replace(/\[strMaxLength\]/g, GetAnswerLength(true,x,y));
-		Temp = Temp.replace(/\[strClue\]/g, Clue.innerHTML, Temp);
-		Result += Temp;
-	}
-	Clue = document.getElementById('Clue_D_' + ClueNum);
-	if (Clue != null){
-		Temp = InputStuff.replace(/\[ClueNum\]/g, ClueNum);
-		Temp = Temp.replace(/\[strClueNum\]/g, DownCaption + ' ' + ClueNum);
-		strParams = 'false,' + ClueNum + ',' + x + ',' + y + ',\'[strBoxId]\'';
-		Temp = Temp.replace(/\[strParams\]/g, strParams);
-		Temp = Temp.replace(/\[strBoxId\]/g, 'GD_' + ClueNum + '_' + x + '_' + y);
-		Temp = Temp.replace(/\[strEditSize\]/g, GetAnswerLength(false,x,y));
-		Temp = Temp.replace(/\[strClue\]/g, Clue.innerHTML, Temp);
-		Result += Temp;
-	}
-	document.getElementById('ClueEntry').innerHTML = Result;
-}
-
-function EnterGuess(Across,ClueNum,x,y,BoxId){
-	if (document.getElementById(BoxId) != null){
-		var Guess = document.getElementById(BoxId).value;
-		var AnsLength = GetAnswerLength(Across,x,y);
-		EnterAnswer(Guess,Across,AnsLength,x,y);
-	}
-}
-
-function SplitStringToPerceivedChars(InString, PC){
-	var Temp = InString.charAt(0);
-	if (InString.length > 1){
-		for (var i=1; i<InString.length; i++){
-			if (IsCombiningDiacritic(InString.charCodeAt(i)) == true){
-				Temp += InString.charAt(i);
-			}
-			else{
-				PC.push(Temp);
-				Temp = InString.charAt(i);
-			}
-		}
-	}
-	PC.push(Temp);
-}
-
-function EnterAnswer(Guess,Across,AnsLength,x,y){
-	var PC = new Array();
-	SplitStringToPerceivedChars(Guess, PC);
-	
-	var i=x;
-	var j=y;
-	var Letter = 0;
-	while (Letter < AnsLength){
-		if (Letter < PC.length){
-			G[i][j] = PC[Letter];
-			if (document.getElementById('L_' + i + '_' + j) != null){
-				document.getElementById('L_' + i + '_' + j).innerHTML = PC[Letter];
-			}
-		}
-		if (Across == true){
-			j++;
+		if (OriginalKeys.indexOf(Key) > -1){
+			return false;
 		}
 		else{
-			i++;
-		}
-		Letter++;
-	}
-}
-
-function SetGridSquareValue(x,y,Val){
-	var GridId = 'L_' + x + '_' + y;
-	if (document.getElementById(GridId) != null){
-		document.getElementById(GridId).innerHTML = Val;
-	}
-}
-
-function ShowHint(Across,ClueNum,x,y,BoxId){
-	var i=x;
-	var j=y;
-	var LetterFromGuess = '';
-	var LetterFromKey = '';
-	var OutString = '';
-	if (Across==true){
-		while (j<L[i].length){
-			if (L[i][j] != ''){
-				OutString += L[i][j];
-				if (CaseSensitive == true){
-					LetterFromKey = L[i][j];
-					LetterFromGuess = G[i][j];
-				}
-				else {
-					LetterFromKey = L[i][j].toUpperCase();
-					LetterFromGuess = G[i][j].toUpperCase();
-				}
-				if (LetterFromGuess != LetterFromKey){
-//				if (G[i][j] != L[i][j]){
-					G[i][j] = L[i][j];
-					Penalties++;
-					break;
-				}
-			}
-			else{
-				break;
-			}
-		j++;
+			return true;
 		}
 	}
-	else{
-		while (i<L.length){
-			if (L[i][j] != ''){
-				OutString += L[i][j];
-				if (CaseSensitive == true){
-					LetterFromKey = L[i][j];
-					LetterFromGuess = G[i][j];
-				}
-				else {
-					LetterFromKey = L[i][j].toUpperCase();
-					LetterFromGuess = G[i][j].toUpperCase();
-				}
-				if (LetterFromGuess != LetterFromKey){
-//				if (G[i][j] != L[i][j]){
-					G[i][j] = L[i][j];
-					Penalties++;
-					break;
-				}
-			}
-			else{
-				break;
-			}
-		i++;
-		}
-	}
-	if (document.getElementById(BoxId) != null){
-		document.getElementById(BoxId).value = OutString;
-	}
 }
-
-L = new Array();
-L[0] = new Array('I','N','F','O','R','M','A','C','I','O','N');
-L[1] = new Array('','','','','','','','O','','','');
-L[2] = new Array('','','','','','','','B','','','');
-L[3] = new Array('','','','','','','V','I','R','U','S');
-L[4] = new Array('','','','','','','','T','','','E');
-L[5] = new Array('','','','','','','','','','','G');
-L[6] = new Array('','','','','','','','','','','U');
-L[7] = new Array('','','','','','','','','','','R');
-L[8] = new Array('','','','','','','','','','','I');
-L[9] = new Array('','','','','','','','','','','D');
-L[10] = new Array('','','','','','','','','','','A');
-L[11] = new Array('','','','','','','','','','','D');
-
-
-CL = new Array();
-CL[0] = new Array(1,0,0,0,0,0,0,2,0,0,0);
-CL[1] = new Array(0,0,0,0,0,0,0,0,0,0,0);
-CL[2] = new Array(0,0,0,0,0,0,0,0,0,0,0);
-CL[3] = new Array(0,0,0,0,0,0,3,0,0,0,4);
-CL[4] = new Array(0,0,0,0,0,0,0,0,0,0,0);
-CL[5] = new Array(0,0,0,0,0,0,0,0,0,0,0);
-CL[6] = new Array(0,0,0,0,0,0,0,0,0,0,0);
-CL[7] = new Array(0,0,0,0,0,0,0,0,0,0,0);
-CL[8] = new Array(0,0,0,0,0,0,0,0,0,0,0);
-CL[9] = new Array(0,0,0,0,0,0,0,0,0,0,0);
-CL[10] = new Array(0,0,0,0,0,0,0,0,0,0,0);
-CL[11] = new Array(0,0,0,0,0,0,0,0,0,0,0);
-
-
-G = new Array();
-G[0] = new Array('','','','','','','','','','','');
-G[1] = new Array('','','','','','','','','','','');
-G[2] = new Array('','','','','','','','','','','');
-G[3] = new Array('','','','','','','','','','','');
-G[4] = new Array('','','','','','','','','','','');
-G[5] = new Array('','','','','','','','','','','');
-G[6] = new Array('','','','','','','','','','','');
-G[7] = new Array('','','','','','','','','','','');
-G[8] = new Array('','','','','','','','','','','');
-G[9] = new Array('','','','','','','','','','','');
-G[10] = new Array('','','','','','','','','','','');
-G[11] = new Array('','','','','','','','','','','');
-
 
 function CheckAnswers(){
 	if (Locked == true){return;}
-
-	var AllCorrect = true;
-	var TotLetters = 0;
-	var CorrectLetters = 0;
-	var LetterFromKey = ''; 
-	var LetterFromGuess = '';
+	var Select = null;
+	var Key = -1;
+	var Parent = null;
+	var Answer = null;
+	var AnsText = '';
+	var AllDone = true;
+	TotCorrectChoices = 0;
 	
-//Check each letter
-	for (var i=0; i<L.length; i++){
-		for (var j=0; j<L[i].length; j++){
-			if (L[i][j] != ''){
-				TotLetters++;
-				if (CaseSensitive == true) {
-					LetterFromKey = L[i][j];
-					LetterFromGuess = G[i][j];
-				}
-				else {
-					LetterFromKey = L[i][j].toUpperCase();
-					LetterFromGuess = G[i][j].toUpperCase();
-				}
-				if (LetterFromGuess != LetterFromKey){ 
-					G[i][j] = '';
-//Blank that square in the grid
-					SetGridSquareValue(i,j,'');
-					AllCorrect = false;
-				}
-				else{
-					CorrectLetters++;
-				}
+//for each item not fixed or a distractor
+	for (var i=0; i<Status.length; i++){
+	
+//if it hasn't been answered correctly yet
+		if (Status[i][0] < 1){
+		
+//Add one to the number of tries for this item
+			Status[i][1]++;
+			
+//Get a pointer to the drop-down
+			Select = document.getElementById(Status[i][2]);
+			Key = GetKeyFromSelect(Select);
+//Save the answer given
+			Status[i][3].push(Select.options[Select.selectedIndex].value);
+			
+//Check the answer
+			if (Select.options[Select.selectedIndex].value == Key){
+					Status[i][0] = 1;
+					AnsText = Select.options[Select.selectedIndex].innerHTML;
+					Parent = Select.parentNode;
+					Parent.removeChild(Select);
+					Parent.innerHTML = AnsText;
+					Parent.nextSibling.innerHTML = CorrectIndicator;
+			} 
+			else{
+				AllDone = false;
+				Parent = Select.parentNode;
+				Parent.nextSibling.innerHTML = IncorrectIndicator;
 			}
 		}
+		else{
+//Add a copy of the last (correct) answer.
+			Status[i][3].push(Status[i][3][Status[i][3].length-1]);
+		}
+//If it's correct, count it
+		if (Status[i][0] == 1){
+			TotCorrectChoices++;
+		}
 	}
+//Calculate the score
+	Score = Math.floor(((TotCorrectChoices-Penalties)/TotalUnfixedLeftItems)*100);
+	if (Score<0){Score = 0;}
+	var Feedback = '';
 
-	Score = Math.floor(((CorrectLetters-Penalties) * 100)/TotLetters);
-	if (Score < 0){Score = 0;}
-
-//Compile the output
-	var Output = '';
-
-	if (AllCorrect == true){
-		Output = Correct + '<br />';
+//Build the feedback
+	if (AllDone == true){
+		Feedback = YourScoreIs + ' ' + Score + '%.' + '<br />' + CorrectResponse;
 	}
-
-	Output += YourScoreIs + ' ' + Score + '%.<br />';
-	if (AllCorrect == false){
-		Output += Incorrect;
+	else{
+		Feedback = YourScoreIs + ' ' + Score + '%.' + '<br />' + IncorrectResponse;
+//Penalty for incorrect check
 		Penalties++;
 	}
 
-	ShowMessage(Output);
-	WriteToInstructions(Output);
-	
-	if ((AllCorrect == true)||(TimeOver == true)){
+//If the exercise is over, deal with that
+	if ((AllDone == true)||(TimeOver == true)){
 
 
 		TimeOver = true;
 		Locked = true;
 		Finished = true;
 		setTimeout('Finish()', SubmissionTimeout);
+		WriteToInstructions(Feedback);
 	}
+
+//Show the feedback
+	ShowMessage(Feedback);
+	
 
 }
 
-function Finish(){
-//If there's a form, fill it out and submit it
-	if (document.store != null){
-		Frm = document.store;
-		Frm.starttime.value = HPNStartTime;
-		Frm.endtime.value = (new Date()).getTime();
-		Frm.mark.value = Score;
-		Frm.submit();
-	}
-}
-
-function TypeChars(Chars){
-	if (CurrentBox != null){
-		CurrentBox.value += Chars;
-	}
-}
 
 
 
@@ -1447,6 +1319,8 @@ function TypeChars(Chars){
 <div class="NavButtonBar" id="TopNavBar">
 
 
+<button class="NavButton" onfocus="NavBtnOver(this)" onblur="NavBtnOut(this)" onmouseover="NavBtnOver(this)" onmouseout="NavBtnOut(this)" onmousedown="NavBtnDown(this)" onmouseup="NavBtnOut(this)" onclick="history.back(); return false;">&lt;=</button>
+
 
 
 
@@ -1461,94 +1335,69 @@ function TypeChars(Chars){
 <!-- EndTopNavButtons -->
 
 <div class="Titles">
-	<h2 class="ExerciseTitle">Palabras claves</h2>
+	<h2 class="ExerciseTitle">Ingenier&#x00ED;a Social</h2>
 
-	<h3 class="ExerciseSubtitle">Crucigrama</h3>
+	<h3 class="ExerciseSubtitle">Ejercicios de asociaci&#x00F3;n</h3>
 
 
 
 </div>
 
 <div id="InstructionsDiv" class="StdDiv">
-	<div id="Instructions">Completa el crucigrama, a continuaci&#x00F3;n, haga clic en "Comprobar" para comprobar su respuesta. Si usted est&#x00E1; atascado, puede hacer clic en "Pista" para ver una letra. Haga clic en un n&#x00FA;mero para ver la pista o pistas para ese n&#x00FA;mero.</div>
+	<div id="Instructions">Asociar los terminos semejantes o que se complementen </div>
 </div>
 
-
-<div class="LeftContainer">
-
-	<div id="Reading" class="StdDiv">
-
-		<div id="ReadingDiv">
-<h3 class="ExerciseSubtitle">palabras </h3><div class="ReadingText">informacion<br />Virus <br />Cobit</div>
-		</div>
-	</div>
-
-</div>
-
-
-<div class="RightContainer">
 
 
 <div id="MainDiv" class="StdDiv">
 
-
-
-<div id="ClueEntry">
-
-</div>
-
-<!-- This top button is hidden; uncomment it to reveal it. -->
-<!--
 <button id="CheckButton1" class="FuncButton" onmouseover="FuncBtnOver(this)" onfocus="FuncBtnOver(this)" onmouseout="FuncBtnOut(this)" onblur="FuncBtnOut(this)" onmousedown="FuncBtnDown(this)" onmouseup="FuncBtnOut(this)" onclick="CheckAnswers()">&nbsp;Comprobar&nbsp;</button>
 
- -->
- 
-<table class="CrosswordGrid">
-<tbody>
+<div id="MatchDiv" style="text-align: center;">
 
-<tr id="Row_0"><td class="NumLetterCell"><a href="javascript:void(0);" class="GridNum" onclick="ShowClue(1,0,0)">1</a><span class="NumLetterCellText" id="L_0_0" onclick="ShowClue(1,0,0)">&nbsp;&nbsp;&nbsp;</span></td><td class="LetterOnlyCell"><span id="L_0_1">&nbsp;</span></td><td class="LetterOnlyCell"><span id="L_0_2">&nbsp;</span></td><td class="LetterOnlyCell"><span id="L_0_3">&nbsp;</span></td><td class="LetterOnlyCell"><span id="L_0_4">&nbsp;</span></td><td class="LetterOnlyCell"><span id="L_0_5">&nbsp;</span></td><td class="LetterOnlyCell"><span id="L_0_6">&nbsp;</span></td><td class="NumLetterCell"><a href="javascript:void(0);" class="GridNum" onclick="ShowClue(2,0,7)">2</a><span class="NumLetterCellText" id="L_0_7" onclick="ShowClue(2,0,7)">&nbsp;&nbsp;&nbsp;</span></td><td class="LetterOnlyCell"><span id="L_0_8">&nbsp;</span></td><td class="LetterOnlyCell"><span id="L_0_9">&nbsp;</span></td><td class="LetterOnlyCell"><span id="L_0_10">&nbsp;</span></td></tr><tr id="Row_1"><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="LetterOnlyCell"><span id="L_1_7">&nbsp;</span></td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td></tr><tr id="Row_2"><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="LetterOnlyCell"><span id="L_2_7">&nbsp;</span></td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td></tr><tr id="Row_3"><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="NumLetterCell"><a href="javascript:void(0);" class="GridNum" onclick="ShowClue(3,3,6)">3</a><span class="NumLetterCellText" id="L_3_6" onclick="ShowClue(3,3,6)">&nbsp;&nbsp;&nbsp;</span></td><td class="LetterOnlyCell"><span id="L_3_7">&nbsp;</span></td><td class="LetterOnlyCell"><span id="L_3_8">&nbsp;</span></td><td class="LetterOnlyCell"><span id="L_3_9">&nbsp;</span></td><td class="NumLetterCell"><a href="javascript:void(0);" class="GridNum" onclick="ShowClue(4,3,10)">4</a><span class="NumLetterCellText" id="L_3_10" onclick="ShowClue(4,3,10)">&nbsp;&nbsp;&nbsp;</span></td></tr><tr id="Row_4"><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="LetterOnlyCell"><span id="L_4_7">&nbsp;</span></td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="LetterOnlyCell"><span id="L_4_10">&nbsp;</span></td></tr><tr id="Row_5"><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="LetterOnlyCell"><span id="L_5_10">&nbsp;</span></td></tr><tr id="Row_6"><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="LetterOnlyCell"><span id="L_6_10">&nbsp;</span></td></tr><tr id="Row_7"><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="LetterOnlyCell"><span id="L_7_10">&nbsp;</span></td></tr><tr id="Row_8"><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="LetterOnlyCell"><span id="L_8_10">&nbsp;</span></td></tr><tr id="Row_9"><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="LetterOnlyCell"><span id="L_9_10">&nbsp;</span></td></tr><tr id="Row_10"><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="LetterOnlyCell"><span id="L_10_10">&nbsp;</span></td></tr><tr id="Row_11"><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="BlankCell">&nbsp;</td><td class="LetterOnlyCell"><span id="L_11_10">&nbsp;</span></td></tr>
+<form id="QForm" method="post" action="" onsubmit="return false;">
+<table border="0" style="margin: 2em auto 2em auto;"><tbody id="Questions">
 
-</tbody>
-</table>
+<tr><td class="LeftItem">Que es la ingenieria Social </td><td class="RightItem"><select id="s0_0"><option value="x">saltarse los sistemas de seguridad a trav&#x00E9;s de la informaci&#x00F3;n no propia</option>
+<option value="1">Ataque por tel&#x00E9;fono, <br />Ataque v&#x00ED;a Internet, <br /></option>
+<option value="3">Recibir un mensaje de e-mail , diciendo que tu computadora est&#x00E1; infectada por un virus.</option>
+<option value="2">Pol&#x00ED;ticas de seguridad robusta en la organizaci&#x00F3;n, <br /><br /></option>
+<option value="0"> Manipulaci&#x00F3;n psicol&#x00F3;gica con el fin de obtener alg&#x00FA;n tipo de informaci&#x00F3;n sensible </option>
+<option value="4">Un desconocido llama a tu casa y dice ser del soporte t&#x00E9;cnico de tu proveedor de internet</option>
+</select></td><td></td></tr><tr><td class="LeftItem">Formas de Ataque </td><td class="RightItem"><select id="s1_1"><option value="x">saltarse los sistemas de seguridad a trav&#x00E9;s de la informaci&#x00F3;n no propia</option>
+<option value="1">Ataque por tel&#x00E9;fono, <br />Ataque v&#x00ED;a Internet, <br /></option>
+<option value="3">Recibir un mensaje de e-mail , diciendo que tu computadora est&#x00E1; infectada por un virus.</option>
+<option value="2">Pol&#x00ED;ticas de seguridad robusta en la organizaci&#x00F3;n, <br /><br /></option>
+<option value="0"> Manipulaci&#x00F3;n psicol&#x00F3;gica con el fin de obtener alg&#x00FA;n tipo de informaci&#x00F3;n sensible </option>
+<option value="4">Un desconocido llama a tu casa y dice ser del soporte t&#x00E9;cnico de tu proveedor de internet</option>
+</select></td><td></td></tr><tr><td class="LeftItem">Como Prevenirlo </td><td class="RightItem"><select id="s2_2"><option value="x">saltarse los sistemas de seguridad a trav&#x00E9;s de la informaci&#x00F3;n no propia</option>
+<option value="1">Ataque por tel&#x00E9;fono, <br />Ataque v&#x00ED;a Internet, <br /></option>
+<option value="3">Recibir un mensaje de e-mail , diciendo que tu computadora est&#x00E1; infectada por un virus.</option>
+<option value="2">Pol&#x00ED;ticas de seguridad robusta en la organizaci&#x00F3;n, <br /><br /></option>
+<option value="0"> Manipulaci&#x00F3;n psicol&#x00F3;gica con el fin de obtener alg&#x00FA;n tipo de informaci&#x00F3;n sensible </option>
+<option value="4">Un desconocido llama a tu casa y dice ser del soporte t&#x00E9;cnico de tu proveedor de internet</option>
+</select></td><td></td></tr><tr><td class="LeftItem">Ejemplo</td><td class="RightItem"><select id="s3_3"><option value="x">saltarse los sistemas de seguridad a trav&#x00E9;s de la informaci&#x00F3;n no propia</option>
+<option value="1">Ataque por tel&#x00E9;fono, <br />Ataque v&#x00ED;a Internet, <br /></option>
+<option value="3">Recibir un mensaje de e-mail , diciendo que tu computadora est&#x00E1; infectada por un virus.</option>
+<option value="2">Pol&#x00ED;ticas de seguridad robusta en la organizaci&#x00F3;n, <br /><br /></option>
+<option value="0"> Manipulaci&#x00F3;n psicol&#x00F3;gica con el fin de obtener alg&#x00FA;n tipo de informaci&#x00F3;n sensible </option>
+<option value="4">Un desconocido llama a tu casa y dice ser del soporte t&#x00E9;cnico de tu proveedor de internet</option>
+</select></td><td></td></tr><tr><td class="LeftItem">Ejemplo 2</td><td class="RightItem"><select id="s4_4"><option value="x">saltarse los sistemas de seguridad a trav&#x00E9;s de la informaci&#x00F3;n no propia</option>
+<option value="1">Ataque por tel&#x00E9;fono, <br />Ataque v&#x00ED;a Internet, <br /></option>
+<option value="3">Recibir un mensaje de e-mail , diciendo que tu computadora est&#x00E1; infectada por un virus.</option>
+<option value="2">Pol&#x00ED;ticas de seguridad robusta en la organizaci&#x00F3;n, <br /><br /></option>
+<option value="0"> Manipulaci&#x00F3;n psicol&#x00F3;gica con el fin de obtener alg&#x00FA;n tipo de informaci&#x00F3;n sensible </option>
+<option value="4">Un desconocido llama a tu casa y dice ser del soporte t&#x00E9;cnico de tu proveedor de internet</option>
+</select></td><td></td></tr>
+
+</tbody></table>
+</form>
+</div>
 
 <button id="CheckButton2" class="FuncButton" onmouseover="FuncBtnOver(this)" onfocus="FuncBtnOver(this)" onmouseout="FuncBtnOut(this)" onblur="FuncBtnOut(this)" onmousedown="FuncBtnDown(this)" onmouseup="FuncBtnOut(this)" onclick="CheckAnswers()">&nbsp;Comprobar&nbsp;</button>
 
-<table id="Clues" style="display: none;">
-<tbody>
-<tr>
-<td>
-
-<table class="ClueList">
-<tbody id="CluesAcross">
-<tr><td colspan="2"><h3 class="ExerciseSubtitle" id="CluesAcrossLabel">Horizontal</h3></td></tr>
-
-<tr><td class="ClueNum">1. </td><td id="Clue_A_1" class="Clue">lo que si quiere proteger</td></tr><tr><td class="ClueNum">3. </td><td id="Clue_A_3" class="Clue">Amenaza</td></tr>
-
-</tbody>
-</table>
-
-</td>
-
-<td>
-
-<table class="ClueList">
-<tbody id="CluesDown">
-<tr><td colspan="2"><h3 class="ExerciseSubtitle" id="CluesDownLabel">Vertical</h3></td></tr>
-
-<tr><td class="ClueNum">2. </td><td id="Clue_D_2" class="Clue">Estandar</td></tr><tr><td class="ClueNum">4. </td><td id="Clue_D_4" class="Clue">estar seguro</td></tr>
-
-</tbody>
-</table>
-
-</td>
-</tr>
-</tbody>
-</table>
-
 </div>
 
-
-</div>
 
 
 <div class="Feedback" id="FeedbackDiv">
@@ -1561,6 +1410,8 @@ function TypeChars(Chars){
 
 <div class="NavButtonBar" id="BottomNavBar">
 
+
+<button class="NavButton" onfocus="NavBtnOver(this)" onblur="NavBtnOut(this)" onmouseover="NavBtnOver(this)" onmouseout="NavBtnOut(this)" onmousedown="NavBtnDown(this)" onmouseup="NavBtnOut(this)" onclick="history.back(); return false;">&lt;=</button>
 
 
 
