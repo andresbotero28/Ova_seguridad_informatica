@@ -327,17 +327,23 @@ li{
 	margin-top: 7px;}
 
 	li ul{
-	display: none;
+	display:none;
+    width: 120px;
 	position: absolute;
-	float: center;
+	float: left;
 	list-style-type: none;
 	padding: 13px;
 	background: #003f5e;
-	margin: 3px;
 	border-radius: 7px;
 	box-shadow: inset 0px 0px 10px white;
-	margin-top: 7px;
+	margin-top: 13px;
 }
+
+li ul a{
+    display: block;
+}
+   
+
 
 	li:hover>ul {
   display:block;
@@ -426,4 +432,11 @@ p {
 	font-size: 12px;
 	font-weight: normal;
 	color: #333;
+}
+
+.subtitle{
+    font-size: 34px;
+    color: #f27507;
+    padding-bottom:15px;
+    border-bottom: solid 2px #ccc;
 }
