@@ -312,11 +312,11 @@ nav{
 	border-radius: 0px 0px 10px 10px;
 	color: #006680;
 }
-ul{
+nav ul{
 margin: auto;
 padding-top: 4px;
 }
-li{
+nav li{
 	float: left;
 	list-style-type: none;
 	padding: 13px;
@@ -326,7 +326,7 @@ li{
 	box-shadow: inset 0px 0px 10px white;
 	margin-top: 7px;}
 
-	li ul{
+	nav li ul{
 	display:none;
     width: 120px;
 	position: absolute;
@@ -339,13 +339,13 @@ li{
 	margin-top: 13px;
 }
 
-li ul a{
+nav li ul a{
     display: block;
 }
    
 
 
-	li:hover>ul {
+	nav li:hover>ul {
   display:block;
 
 }
@@ -440,3 +440,22 @@ p {
     padding-bottom:15px;
     border-bottom: solid 2px #ccc;
 }
+
+.item{
+   text-align: justify;
+    padding-right: 10px;
+}
+.item li{
+    float: left;
+    padding-bottom: 15px;
+}
+
+.resaltado{
+    font-weight: bold;
+    font-size: 18px;
+    color:#003f5e;
+}
+
+
+
+
