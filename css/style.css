@@ -474,6 +474,18 @@ p {
     color:#003f5e;
 }
 
+.autores{
+    float: left;
+    margin: 0 50px 50px 0;
+    clear:both;
+    width: 140px;
+    height: 120px;
+}
+
+.texto-autores{
+    margin-top: 50px;
+}
+
 
 p {
 	font-family:'Nobile',sans-serif;
